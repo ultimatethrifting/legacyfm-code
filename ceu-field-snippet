@@ -1,0 +1,65 @@
+/**
+ * Add a “Certificate CEU Value” metabox to LearnDash courses
+ */
+
+// 1) Register the metabox (priority 11 so it appears below the existing one)
+function ceu_add_certificate_meta_box() {
+    add_meta_box(
+        'certificate_ceu_value_metabox',                // HTML id attribute
+        esc_html__( 'Cert CEU Value', 'textdomain' ), // Box title
+        'ceu_render_meta_box',                          // Callback to render HTML
+        'sfwd-courses',                                 // Post type (LearnDash courses)
+        'side',                                         // Context: side column
+        'default'                                       // Priority: default (below existing side boxes)
+    );
+}
+add_action( 'add_meta_boxes', 'ceu_add_certificate_meta_box', 11 );
+
+// 2) Output the metabox form fields
+function ceu_render_meta_box( $post ) {
+    // Security nonce
+    wp_nonce_field( 'certificate_ceu_value_nonce', 'certificate_ceu_value_nonce_field' );
+    // Retrieve existing value (if any)
+    $value = get_post_meta( $post->ID, 'certificate_ceu_value', true );
+    ?>
+    <p>
+        <label for="certificate_ceu_value_field">
+            <?php esc_html_e( 'Enter a number', 'textdomain' ); ?>
+        </label><br/>
+        <input
+            type="number"
+            id="certificate_ceu_value_field"
+            name="certificate_ceu_value_field"
+            value="<?php echo esc_attr( $value ); ?>"
+            class="small-text"
+        />
+    </p>
+    <?php
+}
+
+// 3) Save the metabox data when the post is saved
+function ceu_save_certificate_meta_box_data( $post_id ) {
+    // Verify nonce
+    if (
+        ! isset( $_POST['certificate_ceu_value_nonce_field'] ) ||
+        ! wp_verify_nonce( $_POST['certificate_ceu_value_nonce_field'], 'certificate_ceu_value_nonce' )
+    ) {
+        return;
+    }
+    // Avoid autosave
+    if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+        return;
+    }
+    // Check permissions
+    if ( ! current_user_can( 'edit_post', $post_id ) ) {
+        return;
+    }
+    // Save or delete meta
+    if ( isset( $_POST['certificate_ceu_value_field'] ) ) {
+        $sanitized = sanitize_text_field( $_POST['certificate_ceu_value_field'] );
+        update_post_meta( $post_id, 'certificate_ceu_value', $sanitized );
+    } else {
+        delete_post_meta( $post_id, 'certificate_ceu_value' );
+    }
+}
+add_action( 'save_post', 'ceu_save_certificate_meta_box_data' );
