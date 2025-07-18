@@ -65,23 +65,29 @@ function ceu_save_certificate_meta_box_data( $post_id ) {
 add_action( 'save_post', 'ceu_save_certificate_meta_box_data' );
 
 /**
- * [ut-postmeta key="meta_key"] – return a post meta value for the current post/course.
- *
- * Usage in a certificate (or anywhere on the course page):
- *   [ut-postmeta key="certificate_ceu_value"]
+ * [ut-postmeta key="meta_key" course_id="123"]
+ * – return a post‑meta value for the given course (or current context).
  */
 function ut_postmeta_shortcode( $atts ) {
     $atts = shortcode_atts( array(
-        'key' => '',
+        'key'       => '',    // meta key to fetch
+        'course_id' => 0,     // optional override
     ), $atts, 'ut-postmeta' );
 
-    if ( empty( $atts['key'] ) ) {
+    // Determine which post ID to use
+    $pid = intval( $atts['course_id'] );
+    if ( ! $pid && get_query_var( 'course_id' ) ) {
+        $pid = intval( get_query_var( 'course_id' ) );
+    }
+    if ( ! $pid && isset( $GLOBALS['post']->ID ) ) {
+        $pid = $GLOBALS['post']->ID;
+    }
+
+    if ( ! $pid || empty( $atts['key'] ) ) {
         return '';
     }
 
-    global $post;
-    // Safely fetch meta
-    $value = get_post_meta( $post->ID, sanitize_key( $atts['key'] ), true );
+    $value = get_post_meta( $pid, sanitize_key( $atts['key'] ), true );
     return esc_html( $value );
 }
 add_shortcode( 'ut-postmeta', 'ut_postmeta_shortcode' );
