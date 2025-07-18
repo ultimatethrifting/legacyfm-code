@@ -63,3 +63,25 @@ function ceu_save_certificate_meta_box_data( $post_id ) {
     }
 }
 add_action( 'save_post', 'ceu_save_certificate_meta_box_data' );
+
+/**
+ * [ut-postmeta key="meta_key"] – return a post meta value for the current post/course.
+ *
+ * Usage in a certificate (or anywhere on the course page):
+ *   [ut-postmeta key="certificate_ceu_value"]
+ */
+function ut_postmeta_shortcode( $atts ) {
+    $atts = shortcode_atts( array(
+        'key' => '',
+    ), $atts, 'ut-postmeta' );
+
+    if ( empty( $atts['key'] ) ) {
+        return '';
+    }
+
+    global $post;
+    // Safely fetch meta
+    $value = get_post_meta( $post->ID, sanitize_key( $atts['key'] ), true );
+    return esc_html( $value );
+}
+add_shortcode( 'ut-postmeta', 'ut_postmeta_shortcode' );
